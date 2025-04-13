@@ -30,7 +30,7 @@ def lambda_handler(event, context):
     session_id = parsed_body.get("CallSid", ["anonymous"])[0]
     digits = parsed_body.get("Digits", [None])[0]
     customer_query = parsed_body.get("SpeechResult", [""])[0]
-    language = parsed_body.get("lang", ["en-US"])[0]
+    selected_language = parsed_body.get("lang", ["en-US"])[0]
 
     if digits is None and customer_query is None:
         return {
@@ -38,7 +38,7 @@ def lambda_handler(event, context):
             "headers": {"Content-Type": "application/xml"},
             "body": f"""<?xml version="1.0" encoding="UTF-8"?>
             <Response>
-                <Gather input="dtmf" numDigits="1" action="https://g9j6r5ypl5.execute-api.us-east-2.amazonaws.com/test/chat" method="POST">
+                <Gather input="dtmf" numDigits="1" action="https://g9j6r5ypl5.execute-api.us-east-2.amazonaws.com/test/chat?lang={selected_language}" method="POST">
                     <Say>Press 1 for English. Press 2 for Japanese.</Say>
                 </Gather>
                 <Say>No input received. Goodbye.</Say>
@@ -56,7 +56,7 @@ def lambda_handler(event, context):
                 "headers": {"Content-Type": "application/xml"},
                 "body": f"""<?xml version="1.0" encoding="UTF-8"?>
                 <Response>
-                    <Gather input="dtmf" numDigits="1" action="https://g9j6r5ypl5.execute-api.us-east-2.amazonaws.com/test/chat" method="POST">
+                    <Gather input="dtmf" numDigits="1" action="https://g9j6r5ypl5.execute-api.us-east-2.amazonaws.com/test/chat?lang={selected_language}" method="POST">
                         <Say>Press 1 for English. Press 2 for Japanese.</Say>
                     </Gather>
                     <Say>No input received. Goodbye.</Say>
@@ -68,7 +68,7 @@ def lambda_handler(event, context):
             "headers": {"Content-Type": "application/xml"},
             "body": f"""<?xml version="1.0" encoding="UTF-8"?>
             <Response>
-                <Gather input="speech" language="{selected_language}" action="https://g9j6r5ypl5.execute-api.us-east-2.amazonaws.com/test/chat" method="POST" timeout="10" speechTimeout="auto">
+                <Gather input="speech" language="{selected_language}" action="https://g9j6r5ypl5.execute-api.us-east-2.amazonaws.com/test/chat?lang={selected_language}" method="POST" timeout="10" speechTimeout="auto">
                     <Say>{'How can I help you today?' if selected_language == 'en-US' else 'ご用件をお話しください。'}</Say>
                 </Gather>
                 <Say>Sorry, I didn't catch that. Goodbye!</Say>
@@ -81,7 +81,7 @@ def lambda_handler(event, context):
             "headers": {"Content-Type": "application/xml"},
             "body": f"""<?xml version="1.0" encoding="UTF-8"?>
             <Response>
-                <Gather input="speech" language="en-US" action="https://g9j6r5ypl5.execute-api.us-east-2.amazonaws.com/test/chat" method="POST" timeout="10" speechTimeout="auto">
+                <Gather input="speech" language={selected_language} action="https://g9j6r5ypl5.execute-api.us-east-2.amazonaws.com/test/chat?lang={selected_language}" method="POST" timeout="10" speechTimeout="auto">
                     <Say>Thank you for calling, how can I help you today?</Say>
                 </Gather>
                 <Say>Sorry, I didn't catch that. Goodbye!</Say>
@@ -96,7 +96,7 @@ def lambda_handler(event, context):
         "body": f"""<?xml version="1.0" encoding="UTF-8"?>
         <Response>
             <Say>{db_response}</Say>
-            <Gather input="speech" language="en-US" action="https://g9j6r5ypl5.execute-api.us-east-2.amazonaws.com/test/chat" method="POST" timeout="7" speechTimeout="auto">
+            <Gather input="speech" language="{selected_language}" action="https://g9j6r5ypl5.execute-api.us-east-2.amazonaws.com/test/chat?lang={selected_language}" method="POST" timeout="7" speechTimeout="auto">
                 <Say>Do you have any further questions?</Say>
             </Gather>
             <Say>Sorry, I didn't catch that. Goodbye!</Say>
