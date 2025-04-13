@@ -28,7 +28,52 @@ def retrieve_db(customer_query, session_id):
 def lambda_handler(event, context):
     parsed_body = parse_qs(event["body"])
     session_id = parsed_body.get("CallSid", ["anonymous"])[0]
+    digits = parsed_body.get("Digits", [None])[0]
     customer_query = parsed_body.get("SpeechResult", [""])[0]
+    language = parsed_body.get("lang", ["en-US"])[0]
+
+    if digits is None and customer_query is None:
+        return {
+            "statusCode": 200,
+            "headers": {"Content-Type": "application/xml"},
+            "body": f"""<?xml version="1.0" encoding="UTF-8"?>
+            <Response>
+                <Gather input="dtmf" numDigits="1" action="https://g9j6r5ypl5.execute-api.us-east-2.amazonaws.com/test/chat" method="POST">
+                    <Say>Press 1 for English. Press 2 for Japanese.</Say>
+                </Gather>
+                <Say>No input received. Goodbye.</Say>
+            </Response>""",
+        }
+
+    if digits:
+        if digits == "1":
+            selected_language = "en-US"
+        elif digits == "2":
+            selected_language = "ja-JP"
+        else:
+            return {
+                "statusCode": 200,
+                "headers": {"Content-Type": "application/xml"},
+                "body": f"""<?xml version="1.0" encoding="UTF-8"?>
+                <Response>
+                    <Gather input="dtmf" numDigits="1" action="https://g9j6r5ypl5.execute-api.us-east-2.amazonaws.com/test/chat" method="POST">
+                        <Say>Press 1 for English. Press 2 for Japanese.</Say>
+                    </Gather>
+                    <Say>No input received. Goodbye.</Say>
+                </Response>""",
+            }
+
+        return {
+            "statusCode": 200,
+            "headers": {"Content-Type": "application/xml"},
+            "body": f"""<?xml version="1.0" encoding="UTF-8"?>
+            <Response>
+                <Gather input="speech" language="{selected_language}" action="https://g9j6r5ypl5.execute-api.us-east-2.amazonaws.com/test/chat" method="POST" timeout="10" speechTimeout="auto">
+                    <Say>{'How can I help you today?' if selected_language == 'en-US' else 'ご用件をお話しください。'}</Say>
+                </Gather>
+                <Say>Sorry, I didn't catch that. Goodbye!</Say>
+            </Response>""",
+        }
 
     if "SpeechResult" not in parsed_body:
         return {
