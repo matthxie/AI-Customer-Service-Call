@@ -81,7 +81,7 @@ def lambda_handler(event, context):
             "headers": {"Content-Type": "application/xml"},
             "body": f"""<?xml version="1.0" encoding="UTF-8"?>
             <Response>
-                <Gather input="speech" language={selected_language} action="https://g9j6r5ypl5.execute-api.us-east-2.amazonaws.com/test/chat?lang={selected_language}" method="POST" timeout="10" speechTimeout="auto">
+                <Gather input="speech" language="{selected_language}" action="https://g9j6r5ypl5.execute-api.us-east-2.amazonaws.com/test/chat?lang={selected_language}" method="POST" timeout="10" speechTimeout="auto">
                     <Say>Thank you for calling, how can I help you today?</Say>
                 </Gather>
                 <Say>Sorry, I didn't catch that. Goodbye!</Say>
