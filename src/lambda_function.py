@@ -25,55 +25,62 @@ def retrieve_db(customer_query, session_id):
     return response
 
 
+def prompt_language_selection():
+    return {
+        "statusCode": 200,
+        "headers": {"Content-Type": "application/xml"},
+        "body": """<?xml version="1.0" encoding="UTF-8"?>
+        <Response>
+            <Gather numDigits="1" action="https://g9j6r5ypl5.execute-api.us-east-2.amazonaws.com/test/chat" method="POST" timeout="8">
+                <Say>Welcome! Please select a language. Press 1 for English. Press 2 for Japanese.</Say>
+            </Gather>
+            <Say>We didn't receive any input. Goodbye!</Say>
+        </Response>""",
+    }
+
+
+def invalid_selection():
+    return {
+        "statusCode": 200,
+        "headers": {"Content-Type": "application/xml"},
+        "body": """<?xml version="1.0" encoding="UTF-8"?>
+        <Response>
+            <Gather numDigits="1" action="https://g9j6r5ypl5.execute-api.us-east-2.amazonaws.com/test/chat" method="POST" timeout="8">
+                <Say>Invalid selection. Press 1 for English. Press 2 for Japanese.</Say>
+            </Gather>
+            <Say>No input detected. Goodbye!</Say>
+        </Response>""",
+    }
+
+
+def select_language(lang_code):
+    return {
+        "statusCode": 302,
+        "headers": {
+            "Location": f"https://g9j6r5ypl5.execute-api.us-east-2.amazonaws.com/test/chat?lang={lang_code}"
+        },
+        "body": "",
+    }
+
+
 def lambda_handler(event, context):
     parsed_body = parse_qs(event["body"])
+    params = event.get("queryStringParameters") or {}
+
     session_id = parsed_body.get("CallSid", ["anonymous"])[0]
     digits = parsed_body.get("Digits", [None])[0]
     customer_query = parsed_body.get("SpeechResult", [""])[0]
-    selected_language = parsed_body.get("lang", ["en-US"])[0]
+    selected_language = params.get("lang")
 
-    if digits is None and customer_query is None:
-        return {
-            "statusCode": 200,
-            "headers": {"Content-Type": "application/xml"},
-            "body": f"""<?xml version="1.0" encoding="UTF-8"?>
-            <Response>
-                <Gather input="dtmf" numDigits="1" action="https://g9j6r5ypl5.execute-api.us-east-2.amazonaws.com/test/chat?lang={selected_language}" method="POST">
-                    <Say>Press 1 for English. Press 2 for Japanese.</Say>
-                </Gather>
-                <Say>No input received. Goodbye.</Say>
-            </Response>""",
-        }
-
-    if digits:
-        if digits == "1":
-            selected_language = "en-US"
+    if selected_language is None:
+        if digits is None:
+            return prompt_language_selection()
+        elif digits == "1":
+            return select_language("en-US")
         elif digits == "2":
-            selected_language = "ja-JP"
+            return select_language("ja-JP")
         else:
-            return {
-                "statusCode": 200,
-                "headers": {"Content-Type": "application/xml"},
-                "body": f"""<?xml version="1.0" encoding="UTF-8"?>
-                <Response>
-                    <Gather input="dtmf" numDigits="1" action="https://g9j6r5ypl5.execute-api.us-east-2.amazonaws.com/test/chat?lang={selected_language}" method="POST">
-                        <Say>Press 1 for English. Press 2 for Japanese.</Say>
-                    </Gather>
-                    <Say>No input received. Goodbye.</Say>
-                </Response>""",
-            }
-
-        return {
-            "statusCode": 200,
-            "headers": {"Content-Type": "application/xml"},
-            "body": f"""<?xml version="1.0" encoding="UTF-8"?>
-            <Response>
-                <Gather input="speech" language="{selected_language}" action="https://g9j6r5ypl5.execute-api.us-east-2.amazonaws.com/test/chat?lang={selected_language}" method="POST" timeout="10" speechTimeout="auto">
-                    <Say>{'How can I help you today?' if selected_language == 'en-US' else 'ご用件をお話しください。'}</Say>
-                </Gather>
-                <Say>Sorry, I didn't catch that. Goodbye!</Say>
-            </Response>""",
-        }
+            return invalid_selection()
 
     if "SpeechResult" not in parsed_body:
         return {
